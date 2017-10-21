@@ -22,6 +22,9 @@ $(document).ready(function(){
   app.init();
   // $('#submit').click(app.handleSubmit());
   $('.username').click(app.handleUsernameClick());
+  $("form").submit(function(e) {
+    e.preventDefault();
+  });
 
 });
 
@@ -32,8 +35,8 @@ var app = {
   init: function() {
 
     var username = window.location.search.slice(10);
-    console.log(username);
     app.fetch();
+    // fetch every second
 
   },
 
@@ -111,9 +114,13 @@ var app = {
 
   handleSubmit: function() {
     var data = {};
+    var test = $('#message').val();
+    console.log(test);
     // get username
     // get message
     // get room
+
+    // send data object to api
   },
 
   escape: function(message) {
