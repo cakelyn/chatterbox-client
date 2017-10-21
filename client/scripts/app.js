@@ -20,6 +20,7 @@ $.ajax({
 $(document).ready(function(){
 
   app.init();
+
   // $('#submit').click(app.handleSubmit());
   $('.username').click(app.handleUsernameClick());
   $("form").submit(function(e) {
@@ -31,12 +32,15 @@ $(document).ready(function(){
 var app = {
 
   server: 'http://parse.hrr.hackreactor.com/chatterbox/classes/messages/',
+  friends: [],
+  latestId: 0,
 
   init: function() {
 
-    var username = window.location.search.slice(10);
     app.fetch();
-    // fetch every second
+
+    // fetch new messages every second
+    setInterval(app.fetch, 3000);
 
   },
 
@@ -47,10 +51,11 @@ var app = {
     $.ajax({
       url: app.server,
       type: 'POST',
-      data: postData,
+      data: JSON.stringify(postData),
       contentType: 'application/json',
       success: function (data) {
-        app.renderMessage(data);
+        console.log('message sent');
+        app.fetch();
       }
     });
 
@@ -62,10 +67,18 @@ var app = {
     $.ajax({
       url: app.server,
       type: 'GET',
+      data: { order: '-createdAt'},
       contentType: 'application/json',
       success: function (data) {
-        console.log(data);
-        app.renderMessage(data);
+        // get the most recent message
+        var mostRecent = data.results[data.results.length-1];
+
+        // if the most recent message id !== the message at the top of chat
+        if (mostRecent !== undefined && mostRecent.objectId !== app.latestId) {
+          // render message
+          app.renderMessage(data);
+          app.latestId = mostRecent.objectId;
+        }
       },
       error: function (data) {
         console.log('error');
@@ -73,6 +86,15 @@ var app = {
     });
 
   },
+
+
+  // filter: function(data) {
+  //   var testXss = [];
+
+  //   var clean = data.results(function(item) {
+  //   if (item.username.includes())
+  //   });
+  // },
 
   clearMessages: function() {
     // should be able to clear messages from the DOM
@@ -85,15 +107,14 @@ var app = {
 
     // if the data was received from the user
     if (data.results === undefined) {
-      console.log(data);
-      var post = '<b>' + data.username + ':</b> ' + data.text;
+      var post = '<span class="username">' + data.username + ':</span> ' + data.text;
       $('#chats').prepend('<div class="message">' + post + '</div>');
 
     // else, if the data was received from the server
     } else {
       for (var i = 0; i < data.results.length; i++) {
         var msg = data.results[i];
-        var post = '<b>' + msg.username + ':</b> ' + msg.text;
+        var post = '<span class="username">' + msg.username + ':</span> ' + msg.text;
 
         $('#chats').prepend('<li class="message">' + post + '</li>');
       }
@@ -107,24 +128,44 @@ var app = {
   },
 
   handleUsernameClick: function() {
-    var msg = $('#message').val();
-    console.log(msg);
+    app.friends.push($('.username').val);
+    console.log('friend added');
 
   },
 
   handleSubmit: function() {
     var data = {};
-    var test = $('#message').val();
-    console.log(test);
+    var text = $('#message').val();
+    var username = window.location.search.slice(10);
+
     // get username
+    data.username = username;
     // get message
+    data.text = encodeURI(text);
     // get room
 
     // send data object to api
+    app.send(data);
   },
 
+  cleanData: function(data) {
+
+    for (var i = 0; i < data.results.length; i++) {
+      data.results[i].username = encodeURI(data.results[i].username);
+      data.results[i].text = encodeURI(data.results[i].text);
+    }
+
+    return data;
+  }
+
+  /*
   escape: function(message) {
     return message.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/''/g, '&quot;').replace(/'/g, '&apos;').replace(/`/g, '&grave;').replace(/,/g, '&comma;').replace(/!/g, '&excl;').replace(/@/g, '&commat;').replace(/$/g, '&dollar;').replace(/%/g, '&percent;').replace(/\(/g, '&lpar;').replace( /\)/g, '&rpar;').replace(/=/g, '&equals;').replace(/\+/g, '&plus;').replace(/{/g, '&lcub;').replace(/}/g, '&rcub;').replace(/\[/g, '&lsqb;').replace(/]/g, '&rsqb;');
   }
+  */
 
 };
+
+/*
+    return message.replace(/</g, '').replace(/>/g, '').replace(/'/g, '').replace(/`/g, '')replace(/$/g, '').replace(/%/g, '').replace(/\(/g, '').replace( /\)/g, '').replace(/=/g, '').replace(/\+/g, '').replace(/{/g, '').replace(/\[/g, '').replace(/]/g, '');
+*/

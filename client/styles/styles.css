@@ -16,6 +16,10 @@ li {
     padding: 10px;
 }
 
+.username {
+    font-weight: bold;
+}
+
 #chats {
     border: none;
     max-width: 400px;
