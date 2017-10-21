@@ -17,18 +17,28 @@ $.ajax({
 
 */
 
+$(document).ready(function(){
+
+  app.init();
+
+  $('#sumbit').click(app.handleSubmit.bind(app));
+
+});
+
 var app = {
+
+  server: 'http://parse.hrr.hackreactor.com/chatterbox/classes/messages/',
 
   init: function() {
 
-  },
+},
 
   send: function(postData) {
     // submit a POST request via ajax
     // should send correct method along with request
 
     $.ajax({
-      url: 'http://parse.hrr.hackreactor.com/chatterbox/classes/messages',
+      url: app.server,
       type: 'POST',
       data: postData,
       contentType: 'application/json',
@@ -39,12 +49,19 @@ var app = {
 
   },
 
+
   fetch: function() {
     // should submit a GET request via ajax
-    $.get({
-      url: 'http://parse.hrr.hackreactor.com/chatterbox/classes/messages/',
+    $.ajax({
+      url: app.server,
+      type: 'GET',
+      contentType: 'application/json',
       success: function (data) {
         // send data to renderMessage or run renderMessage
+        console.log(data);
+      },
+      error: function (data) {
+        console.log('error');
       }
     });
 
@@ -52,16 +69,9 @@ var app = {
 
   clearMessages: function() {
     // should be able to clear messages from the DOM
+    // $.('.message').remove();
 
   },
-
-  // sanitizeHTML: function(dirtyData) {
-  //   // var sanitizeHtml = require('sanitize-html');
-  //   // run any input through sanitize-html
-  //   // if it returns all fine, send postData to send method
-
-  //   // retun cleanPostData
-  // },
 
   renderMessage: function() {
     // should be able to add messages to the DOM
@@ -80,6 +90,10 @@ var app = {
 
   handleSubmit: function() {
     // should try to send a message upon clicking submit
+
+    var dirtyData = $('#input').text();
+    var cleanData = sanitizeHTML(dirtyData);
+    app.send(cleanData).bind(app);
 
   }
 
