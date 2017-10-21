@@ -20,8 +20,8 @@ $.ajax({
 $(document).ready(function(){
 
   app.init();
-
   $('#submit').click(app.handleSubmit());
+  $('.username').click(app.handleUsernameClick());
 
 });
 
@@ -31,8 +31,7 @@ var app = {
 
   init: function() {
 
-    // on username click, trigger handleUsernameClick
-    $('.username').click(app.handleUsernameClick());
+    app.fetch();
 
   },
 
@@ -46,7 +45,7 @@ var app = {
       data: postData,
       contentType: 'application/json',
       success: function (data) {
-        // send data to renderMessage or run renderMessage
+        app.renderMessage(data);
       }
     });
 
@@ -60,7 +59,8 @@ var app = {
       type: 'GET',
       contentType: 'application/json',
       success: function (data) {
-        app.renderMessage(data);
+        console.log(data);
+        app.render(data);
       },
       error: function (data) {
         console.log('error');
@@ -75,10 +75,18 @@ var app = {
 
   },
 
+  render: function(data) {
+    for (var i = 0; i < data.results.length; i++) {
+      var msg = data.results[i];
+      var post = msg.username + ': ' + msg.text;
+
+      $('#chats').prepend('<div class="message">' + post + '</div>');
+    }
+  },
+
   renderMessage: function(message) {
     // should be able to add messages to the DOM
     $('#chats').append('<div class="message">' + '<span class="username>' + message.username + '</span>' + ': ' + message.text + '</div>');
-
   },
 
   renderRoom: function(room) {
@@ -88,30 +96,18 @@ var app = {
   },
 
   handleUsernameClick: function() {
-    // should add a friend
-    $('.username').click(function() {
-      console.log('added friend');
-    });
+    var msg = $('#message').val();
+    console.log(msg);
 
   },
 
   handleSubmit: function() {
-    // should try to send a message upon clicking submit
-    var dirty = document.getElementById('input').value;
-    console.log(dirty);
-    // var clean = app.escape(dirty);
-    // console.log(clean);
 
-    app.send(dirty);
 
   },
 
   escape: function(message) {
-    return message.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/''/g, '&quot;').replace(/'/g, '&apos;').replace(/`/g, '&grave;').replace(/,/g, '&comma;').replace(/!/g, '&excl;').replace(/@/g, '&commat;').replace(/$/g, '&dollar;').replace(/%/g, '&percent;').replace(/\(/g, '&lpar;').replace( /\)/g, '&rpar;').replace(/=/g, '&equals;').replace(/\+/g, '&plus;').replace(/{/g, '&lcub;').replace(/}/g, '&rcub;').replace(/[/g, '&lsqb;').replace(/]/g, '&rsqb;');
- }
+    return message.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/''/g, '&quot;').replace(/'/g, '&apos;').replace(/`/g, '&grave;').replace(/,/g, '&comma;').replace(/!/g, '&excl;').replace(/@/g, '&commat;').replace(/$/g, '&dollar;').replace(/%/g, '&percent;').replace(/\(/g, '&lpar;').replace( /\)/g, '&rpar;').replace(/=/g, '&equals;').replace(/\+/g, '&plus;').replace(/{/g, '&lcub;').replace(/}/g, '&rcub;').replace(/\[/g, '&lsqb;').replace(/]/g, '&rsqb;');
+  }
 
 };
-
-
-
-
