@@ -20,7 +20,7 @@ $.ajax({
 $(document).ready(function(){
 
   app.init();
-  $('#submit').click(app.handleSubmit());
+  // $('#submit').click(app.handleSubmit());
   $('.username').click(app.handleUsernameClick());
 
 });
@@ -60,7 +60,7 @@ var app = {
       contentType: 'application/json',
       success: function (data) {
         console.log(data);
-        app.render(data);
+        app.renderMessage(data);
       },
       error: function (data) {
         console.log('error');
@@ -75,18 +75,24 @@ var app = {
 
   },
 
-  render: function(data) {
-    for (var i = 0; i < data.results.length; i++) {
-      var msg = data.results[i];
-      var post = msg.username + ': ' + msg.text;
-
-      $('#chats').prepend('<div class="message">' + post + '</div>');
-    }
-  },
-
-  renderMessage: function(message) {
+  renderMessage: function(data) {
     // should be able to add messages to the DOM
-    $('#chats').append('<div class="message">' + '<span class="username>' + message.username + '</span>' + ': ' + message.text + '</div>');
+
+    // if the data was received from the user
+    if (data.results === undefined) {
+      console.log(data);
+      var post = data.username + ': ' + data.text;
+      $('#chats').prepend('<div class="message">' + post + '</div>');
+
+    // else, if the data was received from the server
+    } else {
+      for (var i = 0; i < data.results.length; i++) {
+        var msg = data.results[i];
+        var post = msg.username + ': ' + msg.text;
+
+        $('#chats').prepend('<div class="message">' + post + '</div>');
+      }
+    }
   },
 
   renderRoom: function(room) {
@@ -101,9 +107,9 @@ var app = {
 
   },
 
-  handleSubmit: function() {
+  handleSubmit: function(data) {
 
-
+    console.log(data);
   },
 
   escape: function(message) {

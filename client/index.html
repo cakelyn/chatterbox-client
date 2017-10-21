@@ -35,8 +35,10 @@
 
       </select>
 
-      <input id="message" type="text"></input>
-      <button id="submit">Submit</button>
+      <form onsubmit="app.handleSubmit()">
+        <input id="message" type="text">
+        <input id="submit" type="submit">
+      </form>
 
       <div id="chats">
       </div>
