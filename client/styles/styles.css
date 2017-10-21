@@ -9,9 +9,16 @@ h3 {
     display: inline;
 }
 
+li {
+    background-color: lightgrey;
+    list-style: none;
+    margin: 5px;
+    padding: 10px;
+}
+
 #chats {
-    background-color: grey;
-    width: 400px;
+    border: none;
+    max-width: 400px;
 }
 
 #main, #chats {

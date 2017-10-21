@@ -31,6 +31,8 @@ var app = {
 
   init: function() {
 
+    var username = window.location.search.slice(10);
+    console.log(username);
     app.fetch();
 
   },
@@ -81,16 +83,16 @@ var app = {
     // if the data was received from the user
     if (data.results === undefined) {
       console.log(data);
-      var post = data.username + ': ' + data.text;
+      var post = '<b>' + data.username + ':</b> ' + data.text;
       $('#chats').prepend('<div class="message">' + post + '</div>');
 
     // else, if the data was received from the server
     } else {
       for (var i = 0; i < data.results.length; i++) {
         var msg = data.results[i];
-        var post = msg.username + ': ' + msg.text;
+        var post = '<b>' + msg.username + ':</b> ' + msg.text;
 
-        $('#chats').prepend('<div class="message">' + post + '</div>');
+        $('#chats').prepend('<li class="message">' + post + '</li>');
       }
     }
   },
@@ -107,9 +109,11 @@ var app = {
 
   },
 
-  handleSubmit: function(data) {
-
-    console.log(data);
+  handleSubmit: function() {
+    var data = {};
+    // get username
+    // get message
+    // get room
   },
 
   escape: function(message) {
