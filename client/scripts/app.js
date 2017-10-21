@@ -24,7 +24,6 @@ $(document).ready(function(){
   $(document).on('click', '.username', function() {
 
     var val = $(this).text();
-    console.log(val);
     app.handleUsernameClick(val);
   });
 
@@ -64,6 +63,12 @@ var app = {
     setInterval(function(){
       app.fetch();
     }, 3000);
+
+    setInterval(function() {
+      for(var key in app.friends) {
+        $('.' + key).css('font-weight', 'bold');
+      }
+    }, 1000);
 
     // setInterval(function() {
     //   // loop through friends list
@@ -154,7 +159,7 @@ var app = {
         if (msg.roomname === undefined) {
           $('#chats').append('<li class="message all">' + post + '</li>');
         } else {
-          $('#chats').append('<li class="message ' + msg.roomname + msg.username + '">' + post + '</li>');
+          $('#chats').append('<li class="message ' + msg.roomname + ' ' + msg.username + '">' + post + '</li>');
         }
       }
     }
@@ -202,7 +207,9 @@ var app = {
     for(var i = 0; i <data.results.length; i++) {
       // look for certain characters and change them back from entity equivalents
       // !, ?, space, comma
-      data.results[i].username = data.results[i].username.replace(/%20/g, ' ').replace(/&comma;/g, ',').replace(/&excl;/g, '!').replace(/&quest;/g, '?');
+      var re = /[a-zA-Z0-9]/g;
+      data.results[i].username = data.results[i].username.match(re).join('');
+      // data.results[i].username = data.results[i].username.replace(/%20/g, ' ').replace(/&comma;/g, ',').replace(/&excl;/g, '!').replace(/&quest;/g, '?');
       data.results[i].text = data.results[i].text.replace(/%20/g, ' ').replace(/&comma;/g, ',').replace(/&excl;/g, '!').replace(/&quest;/g, '?');
     }
   }
