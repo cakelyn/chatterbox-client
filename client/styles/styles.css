@@ -5,6 +5,14 @@ body {
     font-family: arial, sans-serif;
 }
 
+h3 {
+    display: inline;
+}
+
+#chats {
+    width: 450px;
+}
+
 #main, #chats {
     width: 500px;
     margin: auto;
