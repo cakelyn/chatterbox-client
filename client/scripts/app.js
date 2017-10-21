@@ -40,7 +40,9 @@ var app = {
     app.fetch();
 
     // fetch new messages every second
-    setInterval(app.fetch, 3000);
+    setInterval(function(){
+      app.fetch();
+    }, 3000);
 
   },
 
@@ -54,7 +56,8 @@ var app = {
       data: JSON.stringify(postData),
       contentType: 'application/json',
       success: function (data) {
-        console.log('message sent');
+        $('#message').val('');
+        $('#message').attr('placeholder', 'message sent!');
         app.fetch();
       }
     });
@@ -104,11 +107,12 @@ var app = {
 
   renderMessage: function(data) {
     // should be able to add messages to the DOM
+    app.clearMessages();
 
     // if the data was received from the user
     if (data.results === undefined) {
       var post = '<span class="username">' + data.username + ':</span> ' + data.text;
-      $('#chats').prepend('<div class="message">' + post + '</div>');
+      $('#chats').append('<div class="message">' + post + '</div>');
 
     // else, if the data was received from the server
     } else {
@@ -116,7 +120,7 @@ var app = {
         var msg = data.results[i];
         var post = '<span class="username">' + msg.username + ':</span> ' + msg.text;
 
-        $('#chats').prepend('<li class="message">' + post + '</li>');
+        $('#chats').append('<li class="message">' + post + '</li>');
       }
     }
   },
@@ -141,7 +145,7 @@ var app = {
     // get username
     data.username = username;
     // get message
-    data.text = encodeURI(text);
+    data.text = text;
     // get room
 
     // send data object to api
