@@ -27,6 +27,10 @@ $(document).ready(function(){
     e.preventDefault();
   });
 
+  $('#roomSelect').on('change', function() {
+    app.room = $('#roomSelect').find(":selected").text();
+  });
+
 });
 
 var app = {
@@ -34,6 +38,7 @@ var app = {
   server: 'http://parse.hrr.hackreactor.com/chatterbox/classes/messages/',
   friends: [],
   latestId: 0,
+  room: 'lobby',
 
   init: function() {
 
@@ -112,7 +117,7 @@ var app = {
     // if the data was received from the user
     if (data.results === undefined) {
       var post = '<span class="username">' + data.username + ':</span> ' + data.text;
-      $('#chats').append('<div class="message">' + post + '</div>');
+      $('#chats').append('<li class="message ' + data.room + '">' + post + '</li>');
 
     // else, if the data was received from the server
     } else {
@@ -120,7 +125,7 @@ var app = {
         var msg = data.results[i];
         var post = '<span class="username">' + msg.username + ':</span> ' + msg.text;
 
-        $('#chats').append('<li class="message">' + post + '</li>');
+        $('#chats').append('<li class="message ' + data.room + '">' + post + '</li>');
       }
     }
   },
@@ -147,6 +152,7 @@ var app = {
     // get message
     data.text = text;
     // get room
+    data.room = app.room;
 
     // send data object to api
     app.send(data);
