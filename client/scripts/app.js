@@ -1,229 +1,241 @@
-// YOUR CODE HER$.
-/*
-$.ajax({
-  // This is the url you should use to communicate with the parse API server.
-  url: 'http://parse.hrr.hackreactor.com/chatterbox/classes/messages',
-  type: 'POST',
-  data: JSON.stringify(message),
-  contentType: 'application/json',
-  success: function (data) {
-    console.log('chatterbox: Message sent');
-  },
-  error: function (data) {
-    // See: https://developer.mozilla.org/en-US/docs/Web/API/console.error
-    console.error('chatterbox: Failed to send message', data);
-  }
-});
+$(document).ready(function() {
 
-*/
-
-$(document).ready(function(){
-
+  // initialize app when document is ready
   app.init();
-
-  $(document).on('click', '.username', function() {
-
-    var val = $(this).text();
-    app.handleUsernameClick(val);
-  });
-
-  $("form").submit(function(e) {
-    e.preventDefault();
-  });
-
-  $('#roomSelect').on('change', function() {
-    app.room = $('#roomSelect').find(":selected").text();
-    $('li').hide();
-
-    if (app.room === 'lobby') {
-      $('.lobby').show();
-    } else if (app.room === 'solo') {
-      $('.solo').show();
-    } else if (app.room === 'all') {
-      $('li').show();
-    }
-
-  });
-
 
 });
 
 var app = {
-
+  // set up app variables
   server: 'http://parse.hrr.hackreactor.com/chatterbox/classes/messages/',
+  username: 'anon',
   friends: {},
-  latestId: 0,
-  room: 'lobby',
+  latestMessageId: 0,
+  roomname: 'lobby',
+  messages: [],
 
   init: function() {
+    // get username
+    app.username = window.location.search.substr(10);
 
-    app.fetch();
+    // jQuery selectors
+    app.$message = $('#message');
+    app.$chats = $('#chats');
+    app.$roomSelect = $('#roomSelect');
+    app.$send = $('#send');
 
-    // fetch new messages every second
-    setInterval(function(){
-      app.fetch();
-    }, 3000);
+    // jQuery listeners
+    app.$chats.on('click', '.username', app.handleUsernameClick);
+    app.$send.on('click', app.handleSubmit);
+    app.$roomSelect.on('change', app.handleRoomChange);
 
+    // fetch old messages
+    app.startSpinner();
+    app.fetch(false);
+
+    // continually check for new messages
     setInterval(function() {
-      for(var key in app.friends) {
-        $('.' + key).css('font-weight', 'bold');
-      }
-    }, 1000);
-
-    // setInterval(function() {
-    //   // loop through friends list
-    //   for (var key in app.friends) {
-    //     // select all messages with class of key
-    //     // $('.' + key).css("font-weight", "bold");
-    //     // targeting the text value of a span element, see if it equals key
-    //     console.log(this);
-    //     // set css font-weight to bold
-    //   }
-    // }, 1000);
-
+      app.fetch(true);
+    }, 3000);
   },
 
-  send: function(postData) {
-    // submit a POST request via ajax
-    // should send correct method along with request
+  send: function(message) {
+    app.startSpinner();
 
     $.ajax({
       url: app.server,
       type: 'POST',
-      data: JSON.stringify(postData),
-      contentType: 'application/json',
+      data: message,
       success: function (data) {
-        $('#message').val('');
-        $('#message').attr('placeholder', 'message sent!');
+        // clear messages
+        app.$message.val('');
+
+        // fetch to update messages
         app.fetch();
+      },
+      error: function (error) {
+        console.error('failed to send message: ', error);
       }
     });
-
   },
 
-
-  fetch: function() {
-    // should submit a GET request via ajax
+  fetch: function(animate) {
     $.ajax({
       url: app.server,
       type: 'GET',
       data: { order: '-createdAt'},
       contentType: 'application/json',
       success: function (data) {
-        // get the most recent message
-        var mostRecent = data.results[data.results.length-1];
+        // if we don't have any new messages, don't do anything
+        if (!data.results || !data.results.length) { return; }
 
-        // if the most recent message id !== the message at the top of chat
-        if (mostRecent !== undefined && mostRecent.objectId !== app.latestId) {
-          // clean data
-          app.cleanData(data);
-          // convert data
-          app.convertData(data);
-          // render message
-          app.renderMessage(data);
-          // latestId is first list item on chat
-          app.latestId = mostRecent.objectId;
+        // store messages
+        app.messages = data.results;
+
+        // store the most recent message
+        var mostRecent = data.results[data.results.length - 1];
+
+        // only update if we have new messages
+        // check against mostRecent
+        if (mostRecent.objectId !== app.latestMessageId) {
+          // update rooms
+          app.renderRoomList(data.results);
+
+          // update messages
+          app.renderMessages(data.results, animate);
+
+          // store ID of most recent message
+          app.latestMessageId = mostRecent.objectId;
         }
       },
-      error: function (data) {
-        console.log('error');
+      error: function(error) {
+        console.error('failed to fetch messages: ', error);
       }
     });
 
   },
 
-
-
   clearMessages: function() {
-    // should be able to clear messages from the DOM
-    $('#chats').text('');
+    app.$chats.html('');
+  },
+
+  renderMessages: function(messages, animate) {
+    app.clearMessages();
+    app.stopSpinner();
+
+    if (Array.isArray(messages)) {
+      // add all fetched messages that are in the current room
+      messages.filter(function(message) {
+        return message.roomname === app.roomname || app.roomname === 'lobby' && !message.roomname;
+      }).forEach(app.renderMessage);
+    }
+
+    // animate scroll to top
+    if (animate) {
+      $('body').animate({scrollTop: '0px'}, 'fast');
+    }
 
   },
 
-  renderMessage: function(data) {
-    // should be able to add messages to the DOM
-    app.clearMessages();
+  renderRoomList: function(messages) {
+    app.$roomSelect.html('<option value="__newRoom">New room...</option>');
 
-    // if the data was received from the user
-    if (data.results === undefined) {
-      var post = '<span class="username">' + data.username + '</span>: ' + data.text;
-      $('#chats').append('<li class="message ' + data.roomname + '">' + post + '</li>');
+    if (messages) {
+      var rooms = {};
+      messages.forEach(function(message) {
+        var roomname = message.roomname;
+        if (roomname && !rooms[roomname]) {
+          // add room to the select menu
+          app.renderRoom(roomname);
 
-    // else, if the data was received from the server
-    } else {
-      for (var i = 0; i < data.results.length; i++) {
-        var msg = data.results[i];
-        var post = '<span class="username">' + msg.username + '</span>: ' + msg.text;
-
-        // if there is no room name, put to all
-        if (msg.roomname === undefined) {
-          $('#chats').append('<li class="message all">' + post + '</li>');
-        } else {
-          $('#chats').append('<li class="message ' + msg.roomname + ' ' + msg.username + '">' + post + '</li>');
+          // keep track of rooms that we already have
+          rooms[roomname] = true;
         }
-      }
+      });
     }
+
+    // select the menu option
+    app.$roomSelect.val(app.roomname);
   },
 
   renderRoom: function(room) {
-    // should be able to add rooms to the DOM
-    $('#roomSelect').prepend('<option value="' + room + '">' + room + '"</option>');
+    // prevent XSS
+    var $option = $('<option/>').val(room).text(room);
 
+    // add to select
+    app.$roomSelect.append($option);
   },
 
-  handleUsernameClick: function(val) {
-    app.friends[val] = val;
-    console.log('friend added');
-    console.log(app.friends);
+  renderMessage: function(message) {
+    if (!message.roomname) {
+      message.roomname = 'lobby';
+    }
+
+    // create a div to hold the chats
+    var $chat = $('<div class="chat"/>');
+
+    // add in message data
+    // avoid XSS
+    // store username
+    var $username = $('<span class="username"/>');
+    $username.text(message.username + ': ').attr('data-roomname', message.roomname).attr('data-username', message.username).appendTo($chat);
+
+    // add the friend class if they are a friend
+    if (app.friends[message.username] === true) {
+      $username.addClass('friend');
+    }
+
+    var $message = $('<br><span/>');
+    $message.text(message.text).appendTo($chat);
+
+    // add message to chat
+    app.$chats.append($chat);
   },
 
-  handleSubmit: function() {
-    var data = {};
-    var text = $('#message').val();
-    var username = window.location.search.slice(10);
-
+  handleUsernameClick: function(event) {
     // get username
-    data.username = username;
-    // get message
-    data.text = text;
-    // get room
-    data.roomname = app.room;
+    var username = $(event.target).data('username');
 
-    // send data object to api
-    app.send(data);
+    if (username !== undefined) {
+      // toggle friend
+      app.friends[username] = !app.friends[username];
+
+      // prevent XSS on username
+      var selector = '[data-username="' + username.replace(/"/g, '\\\"') + '"]';
+
+      // add friend class to all messages from selected friend
+      var $usernames = $(selector).toggleClass('friend');
+    }
   },
 
-  cleanData: function(data) {
+  handleRoomChange: function(event) {
+    var selectIndex = app.$roomSelect.prop('selectedIndex');
 
-    for (var i = 0; i < data.results.length; i++) {
-      data.results[i].username = encodeURI(data.results[i].username);
-      data.results[i].text = encodeURI(data.results[i].text);
+    // new room is always the first option
+    if (selectIndex === 0) {
+      var roomname = prompt('Enter room name');
+      if (roomname) {
+        // set as current room
+        app.roomname = roomname;
+
+        // add room to menu
+        app.renderRoom(roomname);
+
+        // select the menu option
+        app.$roomSelect.val(roomname);
+      }
+    } else {
+      app.startSpinner();
+
+      // store as undefined for empty names
+      app.roomname = app.$roomSelect.val();
     }
 
-    return data;
+    // render messages
+    app.renderMessages(app.messages);
   },
 
-  convertData: function(data) {
-    for(var i = 0; i <data.results.length; i++) {
-      // look for certain characters and change them back from entity equivalents
-      // !, ?, space, comma
-      var re = /[a-zA-Z0-9]/g;
-      data.results[i].username = data.results[i].username.match(re).join('');
-      // data.results[i].username = data.results[i].username.replace(/%20/g, ' ').replace(/&comma;/g, ',').replace(/&excl;/g, '!').replace(/&quest;/g, '?');
-      data.results[i].text = data.results[i].text.replace(/%20/g, ' ').replace(/&comma;/g, ',').replace(/&excl;/g, '!').replace(/&quest;/g, '?');
-    }
+  handleSubmit: function(event) {
+    var message = {
+      username: app.username,
+      text: app.$message.val(),
+      roomname: app.roomname || 'lobby'
+    };
+
+    app.send(message);
+
+    // stop the form from resubmitting
+    event.preventDefault();
+  },
+
+  startSpinner: function() {
+    $('.spinner img').show();
+    $('form input[type=submit]').attr('disabled', 'true');
+  },
+
+  stopSpinner: function() {
+    $('.spinner img').fadeOut('fast');
+    $('form input[type=submit]').attr('disabled', null);
   }
 
-
-
-
-  // escape: function(message) {
-  //   return message.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/''/g, '&quot;').replace(/'/g, '&apos;').replace(/`/g, '&grave;').replace..replace(/@/g, '&commat;').replace(/$/g, '&dollar;').replace(/%/g, '&percent;').replace(/\(/g, '&lpar;').replace( /\)/g, '&rpar;').replace(/=/g, '&equals;').replace(/\+/g, '&plus;').replace(/{/g, '&lcub;').replace(/}/g, '&rcub;').replace(/\[/g, '&lsqb;').replace(/]/g, '&rsqb;');
-  // }
-
-
 };
-
-/*
-    return message.replace(/</g, '').replace(/>/g, '').replace(/'/g, '').replace(/`/g, '')replace(/$/g, '').replace(/%/g, '').replace(/\(/g, '').replace( /\)/g, '').replace(/=/g, '').replace(/\+/g, '').replace(/{/g, '').replace(/\[/g, '').replace(/]/g, '');
-*/
